@@ -388,9 +388,71 @@
   #content-body::-webkit-scrollbar-track { background: transparent; }
   #content-body::-webkit-scrollbar-thumb { background: var(--faint); border-radius: 2px; }
 
+
+  /* ─── TOOLBAR ─── */
+  #toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 10px 16px;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    align-items: center;
+  }
+
+  .toolbar-group {
+    display: flex;
+    gap: 3px;
+    align-items: center;
+    padding-right: 8px;
+    border-right: 1px solid var(--border);
+  }
+
+  .toolbar-group:last-child {
+    border-right: none;
+    padding-right: 0;
+  }
+
+  .tb {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    padding: 6px 10px;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.15s;
+    min-width: 32px;
+    min-height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  .tb:hover { border-color: var(--accent2); color: var(--accent2); background: rgba(139,111,168,0.1); }
+  .tb:active { background: rgba(192,132,160,0.2); }
+
+  #color-picker {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    padding: 5px 6px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    color: var(--muted);
+    cursor: pointer;
+    height: 32px;
+  }
+
+  #color-picker:focus { outline: none; border-color: var(--accent2); }
+
+  /* ─── RICH TEXT EDITOR ─── */
   #editor {
     width: 100%;
-    min-height: calc(100vh - 200px);
+    min-height: calc(100vh - 260px);
     background: transparent;
     border: none;
     outline: none;
@@ -398,10 +460,58 @@
     font-family: 'Crimson Pro', serif;
     font-size: 17px;
     line-height: 1.75;
-    resize: none;
     caret-color: var(--accent);
+    white-space: pre-wrap;
+    word-wrap: break-word;
   }
-  #editor::placeholder { color: var(--faint); font-style: italic; }
+
+  #editor:empty:before {
+    content: attr(placeholder);
+    color: var(--faint);
+    font-style: italic;
+    pointer-events: none;
+  }
+
+  #editor:focus { outline: none; }
+
+  #editor b, #editor strong { font-weight: 600; }
+  #editor i, #editor em { font-style: italic; }
+  #editor u { text-decoration: underline; }
+  #editor s { text-decoration: line-through; }
+  #editor small { font-size: 0.75em; }
+  #editor ul { padding-left: 1.5em; }
+  #editor ol { padding-left: 1.5em; }
+  #editor li { margin: 2px 0; }
+  #editor a { color: var(--accent2); text-decoration: underline; }
+
+  @media (max-width: 768px) {
+    #toolbar {
+      padding: 8px 10px;
+      gap: 3px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .tb {
+      font-size: 12px;
+      padding: 8px 10px;
+      min-width: 38px;
+      min-height: 38px;
+    }
+
+    #color-picker {
+      height: 38px;
+      font-size: 12px;
+    }
+
+    #editor {
+      font-size: 16px;
+      min-height: 50vh;
+      padding: 4px 0;
+    }
+  }
+
 
   /* ─── WELCOME ─── */
   #welcome {
@@ -497,8 +607,37 @@
           <button class="btn primary" onclick="exportThread()">export</button>
         </div>
       </div>
+      <div id="toolbar">
+        <div class="toolbar-group">
+          <button class="tb" onclick="fmt('bold')" title="Bold"><b>B</b></button>
+          <button class="tb" onclick="fmt('italic')" title="Italic"><i>I</i></button>
+          <button class="tb" onclick="fmt('underline')" title="Underline"><u>U</u></button>
+          <button class="tb" onclick="fmt('strikeThrough')" title="Strikethrough"><s>S</s></button>
+        </div>
+        <div class="toolbar-group">
+          <button class="tb" onclick="fmtSmall()" title="Small text">small</button>
+          <select id="color-picker" onchange="fmtColor(this.value)" title="Text color">
+            <option value="">color</option>
+            <option value="#e8dded">default</option>
+            <option value="#c084a0">pink</option>
+            <option value="#8b6fa8">purple</option>
+            <option value="#6a9a6a">green</option>
+            <option value="#9a6a6a">red</option>
+            <option value="#6a7a9a">blue</option>
+            <option value="#9a8a6a">gold</option>
+          </select>
+        </div>
+        <div class="toolbar-group">
+          <button class="tb" onclick="fmtLink()" title="Link">link</button>
+          <button class="tb" onclick="fmt('insertUnorderedList')" title="Bullet list">• list</button>
+          <button class="tb" onclick="fmt('insertOrderedList')" title="Numbered list">1. list</button>
+        </div>
+        <div class="toolbar-group">
+          <button class="tb" onclick="clearFormat()" title="Clear formatting">clear</button>
+        </div>
+      </div>
       <div id="content-body">
-        <textarea id="editor" placeholder="Draft your reply here... it syncs to Google Drive automatically."></textarea>
+        <div id="editor" contenteditable="true" spellcheck="true" placeholder="Draft your reply here... it syncs to Google Drive automatically."></div>
       </div>
     </div>
   </div>
@@ -817,7 +956,7 @@ async function saveToDrive() {
 
 function forceSave() {
   if (currentThread) {
-    allDrafts[currentThread.key] = document.getElementById('editor').value;
+    allDrafts[currentThread.key] = document.getElementById('editor').innerHTML;
   }
   saveToDrive();
 }
@@ -933,7 +1072,7 @@ function buildSidebar(filter = '') {
 function openThread(charName, partnerName, threadName, key, el) {
   // Save current before switching
   if (currentThread && isDirty) {
-    allDrafts[currentThread.key] = document.getElementById('editor').value;
+    allDrafts[currentThread.key] = document.getElementById('editor').innerHTML;
     saveToDrive();
   }
 
@@ -950,7 +1089,7 @@ function openThread(charName, partnerName, threadName, key, el) {
   document.getElementById('content-title').textContent = threadName;
 
   const editor = document.getElementById('editor');
-  editor.value = allDrafts[key] || '';
+  editor.innerHTML = allDrafts[key] || '';
   setIndicator('saved');
 
   editor.oninput = () => {
@@ -958,7 +1097,7 @@ function openThread(charName, partnerName, threadName, key, el) {
     setIndicator('unsaved');
     clearTimeout(saveTimer);
     saveTimer = setTimeout(() => {
-      allDrafts[key] = editor.value;
+      allDrafts[key] = editor.innerHTML;
       saveToDrive();
       isDirty = false;
     }, 1500);
@@ -972,13 +1111,13 @@ function clearThread() {
   if (!currentThread) return;
   if (!confirm(`Clear all content for "${currentThread.threadName}"?`)) return;
   delete allDrafts[currentThread.key];
-  document.getElementById('editor').value = '';
+  document.getElementById('editor').innerHTML = '';
   saveToDrive();
 }
 
 function exportThread() {
   if (!currentThread) return;
-  const content = document.getElementById('editor').value;
+  const content = document.getElementById('editor').innerText;
   const blob = new Blob([content], { type: 'text/plain' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
@@ -988,6 +1127,45 @@ function exportThread() {
 
 function filterChars(val) { buildSidebar(val); }
 
+
+
+// ─── RICH TEXT ───
+function fmt(cmd) {
+  document.getElementById('editor').focus();
+  document.execCommand(cmd, false, null);
+}
+
+function fmtSmall() {
+  const sel = window.getSelection();
+  if (!sel.rangeCount) return;
+  const range = sel.getRangeAt(0);
+  if (range.collapsed) return;
+  const small = document.createElement('small');
+  try {
+    range.surroundContents(small);
+  } catch(e) {
+    document.execCommand('insertHTML', false, '<small>' + sel.toString() + '</small>');
+  }
+}
+
+function fmtColor(color) {
+  if (!color) return;
+  document.getElementById('editor').focus();
+  document.execCommand('foreColor', false, color);
+  document.getElementById('color-picker').value = '';
+}
+
+function fmtLink() {
+  const url = prompt('Enter URL:');
+  if (!url) return;
+  document.getElementById('editor').focus();
+  document.execCommand('createLink', false, url);
+}
+
+function clearFormat() {
+  document.getElementById('editor').focus();
+  document.execCommand('removeFormat', false, null);
+}
 
 // ─── MOBILE SIDEBAR ───
 function toggleSidebar() {
@@ -1012,7 +1190,7 @@ function closeSidebar() {
 // Save before closing
 window.addEventListener('beforeunload', (e) => {
   if (isDirty && currentThread) {
-    allDrafts[currentThread.key] = document.getElementById('editor').value;
+    allDrafts[currentThread.key] = document.getElementById('editor').innerHTML;
     saveToDrive();
   }
 });
