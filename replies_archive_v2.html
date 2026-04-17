@@ -2,9 +2,10 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>scriptorxfabularum — Thread Archive</title>
 <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230e0c0f'/><text y='72' x='50' text-anchor='middle' font-size='65' fill='%23c084a0'>&#10022;</text></svg>">
 <style>
   :root {
     --bg: #0e0c0f;
@@ -18,6 +19,86 @@
     --faint: #3d3545;
     --thread-bg: #12101a;
     --sidebar-w: 300px;
+  }
+
+
+  /* ─── MOBILE SIDEBAR TOGGLE ─── */
+  #sidebar-toggle {
+    display: none;
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 48px;
+    height: 48px;
+    background: var(--accent);
+    border: none;
+    border-radius: 50%;
+    color: var(--bg);
+    font-size: 20px;
+    cursor: pointer;
+    z-index: 200;
+    box-shadow: 0 4px 20px rgba(192,132,160,0.4);
+    align-items: center;
+    justify-content: center;
+  }
+
+  #sidebar-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 150;
+  }
+
+  @media (max-width: 768px) {
+    #sidebar-toggle { display: flex; }
+
+    #sidebar {
+      position: fixed;
+      left: -100%;
+      top: 0;
+      height: 100%;
+      z-index: 160;
+      transition: left 0.3s ease;
+      width: 85vw;
+      max-width: 320px;
+    }
+
+    #sidebar.open {
+      left: 0;
+    }
+
+    #sidebar.open ~ #sidebar-overlay {
+      display: block;
+    }
+
+    #main {
+      width: 100%;
+    }
+
+    #content-header {
+      padding: 14px 16px 12px;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    #content-actions {
+      padding-top: 0;
+      flex-wrap: wrap;
+    }
+
+    #content-body {
+      padding: 16px;
+    }
+
+    #editor {
+      font-size: 16px;
+      min-height: calc(100vh - 180px);
+    }
+
+    #welcome {
+      padding: 20px;
+    }
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -401,6 +482,8 @@
       </div>
     </div>
   </div>
+  <button id="sidebar-toggle" onclick="toggleSidebar()">☰</button>
+  <div id="sidebar-overlay" onclick="closeSidebar()"></div>
 </div>
 
 <!-- Google API -->
@@ -839,6 +922,7 @@ function openThread(charName, partnerName, threadName, key, el) {
   currentThread = { charName, partnerName, threadName, key };
   isDirty = false;
 
+  if (window.innerWidth <= 768) closeSidebar();
   document.getElementById('welcome').classList.add('hidden');
   document.getElementById('content-view').classList.remove('hidden');
 
@@ -883,6 +967,24 @@ function exportThread() {
 }
 
 function filterChars(val) { buildSidebar(val); }
+
+
+// ─── MOBILE SIDEBAR ───
+function toggleSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebar-overlay');
+  const isOpen = sidebar.classList.toggle('open');
+  overlay.style.display = isOpen ? 'block' : 'none';
+  document.getElementById('sidebar-toggle').textContent = isOpen ? '✕' : '☰';
+}
+
+function closeSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebar-overlay');
+  sidebar.classList.remove('open');
+  overlay.style.display = 'none';
+  document.getElementById('sidebar-toggle').textContent = '☰';
+}
 
 // ─── INIT ───
 // Handled by DOMContentLoaded above
