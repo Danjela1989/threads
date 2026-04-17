@@ -832,10 +832,23 @@ function buildSidebar(filter = '') {
 
   DATA.forEach(char => {
     const hasThreads = char.partners.length > 0;
+
+    // When filtering, determine which partners (and threads) match
+    let visiblePartners = char.partners;
     if (lf) {
-      const match = char.name.toLowerCase().includes(lf) ||
-        char.partners.some(p => p.name.toLowerCase().includes(lf) || p.threads.some(t => t.toLowerCase().includes(lf)));
-      if (!match) return;
+      const charNameMatches = char.name.toLowerCase().includes(lf);
+      if (charNameMatches) {
+        // Show all partners/threads under this character
+        visiblePartners = char.partners;
+      } else {
+        // Filter to only partners/threads that match
+        visiblePartners = char.partners.map(p => {
+          if (p.name.toLowerCase().includes(lf)) return p; // whole partner matches
+          const matchingThreads = p.threads.filter(t => t.toLowerCase().includes(lf));
+          return matchingThreads.length ? { ...p, threads: matchingThreads } : null;
+        }).filter(Boolean);
+      }
+      if (!visiblePartners.length && !char.name.toLowerCase().includes(lf)) return;
     }
 
     const section = document.createElement('div');
@@ -855,7 +868,7 @@ function buildSidebar(filter = '') {
         header.querySelector('.char-toggle').classList.toggle('open', open);
       });
 
-      char.partners.forEach(partner => {
+      visiblePartners.forEach(partner => {
         const pH = document.createElement('div');
         pH.className = 'partner-header';
         pH.innerHTML = `<span class="partner-name">${partner.name}</span><span class="partner-toggle">▶</span>`;
