@@ -53,27 +53,45 @@
   @media (max-width: 768px) {
     #sidebar-toggle { display: flex; }
 
+    body { display: block; position: relative; }
+
     #sidebar {
       position: fixed;
-      left: -100%;
+      left: -100vw;
       top: 0;
       height: 100%;
       z-index: 160;
       transition: left 0.3s ease;
       width: 85vw;
       max-width: 320px;
+      min-width: unset;
     }
 
     #sidebar.open {
       left: 0;
     }
 
-    #sidebar.open ~ #sidebar-overlay {
+    #sidebar-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      z-index: 150;
+      display: none;
+    }
+
+    #sidebar.open + #sidebar-overlay {
       display: block;
     }
 
+    #app {
+      display: block !important;
+    }
+
     #main {
-      width: 100%;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
     }
 
     #content-header {
@@ -89,11 +107,13 @@
 
     #content-body {
       padding: 16px;
+      flex: 1;
+      overflow-y: auto;
     }
 
     #editor {
       font-size: 16px;
-      min-height: calc(100vh - 180px);
+      min-height: 60vh;
     }
 
     #welcome {
@@ -482,8 +502,8 @@
       </div>
     </div>
   </div>
-  <button id="sidebar-toggle" onclick="toggleSidebar()">☰</button>
   <div id="sidebar-overlay" onclick="closeSidebar()"></div>
+  <button id="sidebar-toggle" onclick="toggleSidebar()">☰</button>
 </div>
 
 <!-- Google API -->
