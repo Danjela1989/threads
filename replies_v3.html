@@ -843,15 +843,30 @@ async function loadFromDrive() {
     });
     if (res.result.files.length > 0) {
       driveFileId = res.result.files[0].id;
-      const data = await gapi.client.drive.files.get({ fileId: driveFileId, alt: 'media' });
-      allDrafts = JSON.parse(data.body || '{}');
+      // Use raw fetch instead of gapi to avoid encoding issues with data.body
+      const resp = await fetch(
+        `https://www.googleapis.com/drive/v3/files/${driveFileId}?alt=media`,
+        { headers: { 'Authorization': `Bearer ${accessToken}` } }
+      );
+      if (!resp.ok) throw new Error(`Load failed: ${resp.status}`);
+      const text = await resp.text();
+      try {
+        allDrafts = JSON.parse(text);
+      } catch(parseErr) {
+        console.error('Failed to parse drafts JSON:', parseErr);
+        // Don't overwrite with empty — keep whatever we had
+        allDrafts = allDrafts || {};
+        setSyncDot('● parse error');
+        return;
+      }
     } else {
       allDrafts = {};
     }
     setSyncDot('● synced');
   } catch(e) {
     console.error(e);
-    allDrafts = {};
+    // Don't reset allDrafts on error — keep whatever was loaded before
+    allDrafts = allDrafts || {};
     setSyncDot('● offline');
   }
 }
