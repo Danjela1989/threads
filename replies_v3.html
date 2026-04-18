@@ -410,6 +410,9 @@ html, body {
 
   #toolbar {
     padding: 6px 10px;
+    position: sticky;
+    top: 0;
+    z-index: 5;
   }
   .tb { min-height: 34px; min-width: 34px; font-size: 12px; }
   #color-pick { height: 34px; }
@@ -469,6 +472,7 @@ html, body {
         </div>
         <div id="content-actions">
           <span id="save-indicator">● saved</span>
+          <button class="btn" id="scroll-btn" onclick="scrollJump()" title="Jump to top / bottom">⌄ end</button>
           <button class="btn" onclick="clearThread()">clear</button>
           <button class="btn primary" onclick="exportThread()">export</button>
         </div>
@@ -963,6 +967,30 @@ function clearThread() {
   document.getElementById('editor').innerHTML = '';
   saveToDrive();
 }
+
+function scrollJump() {
+  const wrap = document.getElementById('editor-wrap');
+  const btn = document.getElementById('scroll-btn');
+  const atBottom = wrap.scrollHeight - wrap.scrollTop - wrap.clientHeight < 40;
+  if (atBottom) {
+    wrap.scrollTo({ top: 0, behavior: 'smooth' });
+    btn.textContent = '⌄ end';
+  } else {
+    wrap.scrollTo({ top: wrap.scrollHeight, behavior: 'smooth' });
+    btn.textContent = '⌃ top';
+  }
+}
+
+// Keep scroll button label in sync with actual scroll position
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('editor-wrap').addEventListener('scroll', () => {
+    const wrap = document.getElementById('editor-wrap');
+    const btn = document.getElementById('scroll-btn');
+    if (!btn) return;
+    const atBottom = wrap.scrollHeight - wrap.scrollTop - wrap.clientHeight < 40;
+    btn.textContent = atBottom ? '⌃ top' : '⌄ end';
+  });
+});
 
 function exportThread() {
   if (!currentKey) return;
