@@ -766,8 +766,14 @@ window.addEventListener('DOMContentLoaded', () => {
           prompt: '',
           callback: async (resp) => {
             if (resp.error) {
-              setStatus('Sign-in failed. Please try again.');
-              document.getElementById('sign-in-btn').style.display = 'flex';
+              // If this was a silent refresh (no UI), don't show error — just set the token
+              if (resp.error !== 'access_denied') {
+                accessToken = null;
+              }
+              if (document.getElementById('app').style.display === 'none') {
+                setStatus('Sign-in failed. Please try again.');
+                document.getElementById('sign-in-btn').style.display = 'flex';
+              }
               return;
             }
             accessToken = resp.access_token;
@@ -775,8 +781,11 @@ window.addEventListener('DOMContentLoaded', () => {
             const expiry = Date.now() + (resp.expires_in * 1000);
             localStorage.setItem('sfx_token', accessToken);
             localStorage.setItem('sfx_expiry', expiry);
-            await loadFromDrive();
-            showApp();
+            // Only load and show app if we're not already in the app
+            if (document.getElementById('app').style.display === 'none') {
+              await loadFromDrive();
+              showApp();
+            }
           }
         });
 
@@ -871,30 +880,70 @@ async function loadFromDrive() {
   }
 }
 
+// Refresh the access token silently, returns true if successful
+function refreshToken() {
+  return new Promise((resolve) => {
+    tokenClient.requestAccessToken({ prompt: '' });
+    // Give it 5 seconds to come back
+    const check = setInterval(() => {
+      if (accessToken) { clearInterval(check); resolve(true); }
+    }, 200);
+    setTimeout(() => { clearInterval(check); resolve(false); }, 5000);
+  });
+}
+
+async function doSaveRequest(token, body) {
+  if (driveFileId) {
+    return await fetch(`https://www.googleapis.com/upload/drive/v3/files/${driveFileId}?uploadType=media`, {
+      method: 'PATCH',
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body
+    });
+  } else {
+    const meta = await fetch('https://www.googleapis.com/drive/v3/files', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: FILENAME, parents: ['appDataFolder'] })
+    });
+    driveFileId = (await meta.json()).id;
+    return await fetch(`https://www.googleapis.com/upload/drive/v3/files/${driveFileId}?uploadType=media`, {
+      method: 'PATCH',
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body
+    });
+  }
+}
+
 async function saveToDrive() {
   if (!accessToken) return;
   setSyncDot('● saving');
   const body = JSON.stringify(allDrafts);
   try {
-    if (driveFileId) {
-      await fetch(`https://www.googleapis.com/upload/drive/v3/files/${driveFileId}?uploadType=media`, {
-        method: 'PATCH',
-        headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
-        body
-      });
-    } else {
-      const meta = await fetch('https://www.googleapis.com/drive/v3/files', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: FILENAME, parents: ['appDataFolder'] })
-      });
-      driveFileId = (await meta.json()).id;
-      await fetch(`https://www.googleapis.com/upload/drive/v3/files/${driveFileId}?uploadType=media`, {
-        method: 'PATCH',
-        headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
-        body
-      });
+    let resp = await doSaveRequest(accessToken, body);
+
+    // If token expired, refresh and retry once
+    if (resp.status === 401) {
+      setSyncDot('● refreshing token...');
+      const oldToken = accessToken;
+      accessToken = null; // clear so refreshToken can detect the new one
+      const ok = await refreshToken();
+      if (!ok || !accessToken) {
+        setSyncDot('● session expired — please reload');
+        setIndicator('error');
+        return;
+      }
+      // Update gapi token too
+      gapi.client.setToken({ access_token: accessToken });
+      resp = await doSaveRequest(accessToken, body);
     }
+
+    if (!resp.ok) {
+      console.error('Save failed:', resp.status);
+      setSyncDot('● error');
+      setIndicator('error');
+      return;
+    }
+
     setSyncDot('● synced');
     setIndicator('saved');
     isDirty = false;
