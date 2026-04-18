@@ -482,6 +482,7 @@ html, body {
           <button class="tb" onmousedown="e=event;e.preventDefault();fmt('strikeThrough')" title="Strike"><s>S</s></button>
         </div>
         <div class="tb-group">
+          <button class="tb" onmousedown="e=event;e.preventDefault();fmtBreak()" title="Reply break">break</button>
           <button class="tb" onmousedown="e=event;e.preventDefault();fmtSmall()" title="Small">small</button>
           <select id="color-pick" onchange="fmtColor(this.value)" title="Color">
             <option value="">color</option>
@@ -966,6 +967,11 @@ function exportThread() {
 function fmt(cmd) {
   document.getElementById('editor').focus();
   document.execCommand(cmd, false, null);
+}
+
+function fmtBreak() {
+  document.getElementById('editor').focus();
+  document.execCommand('insertHTML', false, '<p style="text-align:center;color:#7a6d82;letter-spacing:0.3em;margin:0.6em 0;">· · · ✦ · · ·</p>');
 }
 
 function fmtSmall() {
