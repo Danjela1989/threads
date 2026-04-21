@@ -1,0 +1,1646 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>scriptorxfabularum — Thread Archive</title>
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230e0c0f'/><text y='72' x='50' text-anchor='middle' font-size='65' fill='%23c084a0'>&#10022;</text></svg>">
+<style>
+:root {
+  --bg: #0e0c0f;
+  --surface: #161318;
+  --surface2: #1e1a21;
+  --border: #2a2430;
+  --accent: #c084a0;
+  --accent2: #8b6fa8;
+  --text: #e8dded;
+  --muted: #7a6d82;
+  --faint: #3d3545;
+  --sidebar-w: 300px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+  font-family: 'Crimson Pro', Georgia, serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* ── AUTH SCREEN ── */
+#auth-screen {
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 20px;
+  z-index: 999;
+  text-align: center;
+  padding: 40px;
+}
+#auth-screen h1 { font-size: 28px; font-weight: 300; font-style: italic; color: var(--accent); }
+#auth-screen p { font-size: 15px; color: var(--muted); max-width: 380px; line-height: 1.6; }
+#auth-screen .glyph { font-size: 48px; color: var(--border); }
+#auth-status { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--muted); }
+#sign-in-btn {
+  display: none;
+  align-items: center;
+  gap: 12px;
+  background: var(--surface2);
+  border: 1px solid var(--accent2);
+  border-radius: 6px;
+  padding: 12px 24px;
+  color: var(--text);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+#sign-in-btn:hover { background: var(--accent2); color: var(--bg); }
+
+/* ── APP LAYOUT ── */
+#app {
+  display: none;
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+/* ── SIDEBAR ── */
+#sidebar {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: var(--sidebar-w);
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  z-index: 10;
+  transition: transform 0.3s ease;
+}
+
+#sidebar-header {
+  padding: 18px 16px 12px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface2);
+  flex-shrink: 0;
+}
+#sidebar-header h1 {
+  font-family: 'Crimson Pro', serif;
+  font-size: 12px;
+  font-weight: 300;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 10px;
+}
+#search {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 7px 10px;
+  color: var(--text);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+#search:focus { border-color: var(--accent2); }
+#search::placeholder { color: var(--muted); }
+
+#char-list {
+  overflow-y: auto;
+  flex: 1;
+}
+#char-list::-webkit-scrollbar { width: 3px; }
+#char-list::-webkit-scrollbar-thumb { background: var(--faint); border-radius: 2px; }
+
+.char-section { border-bottom: 1px solid var(--border); }
+.char-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 16px;
+  cursor: pointer;
+  transition: background 0.15s;
+  user-select: none;
+}
+.char-header:hover { background: var(--surface2); }
+.char-name { font-size: 14px; }
+.char-name.no-threads { color: var(--muted); font-style: italic; }
+.char-toggle { color: var(--muted); font-size: 10px; transition: transform 0.2s; font-family: 'JetBrains Mono', monospace; }
+.char-toggle.open { transform: rotate(90deg); }
+.char-body { display: none; }
+.char-body.open { display: block; }
+
+.partner-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 16px 7px 28px;
+  cursor: pointer;
+  transition: background 0.15s;
+  user-select: none;
+}
+.partner-header:hover { background: rgba(192,132,160,0.06); }
+.partner-name { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--accent2); }
+.partner-toggle { color: var(--faint); font-size: 9px; transition: transform 0.2s; font-family: 'JetBrains Mono', monospace; }
+.partner-toggle.open { transform: rotate(90deg); }
+.partner-body { display: none; }
+.partner-body.open { display: block; }
+
+.thread-item {
+  padding: 6px 16px 6px 40px;
+  cursor: pointer;
+  font-size: 12.5px;
+  color: var(--muted);
+  transition: color 0.15s, background 0.15s;
+  border-left: 2px solid transparent;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.thread-item:hover { color: var(--text); background: rgba(192,132,160,0.04); }
+.thread-item.active { color: var(--accent); border-left-color: var(--accent); background: rgba(192,132,160,0.08); }
+.thread-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--faint); flex-shrink: 0; transition: background 0.15s; }
+.thread-item.active .thread-dot { background: var(--accent); }
+.thread-item:hover .thread-dot { background: var(--muted); }
+
+#stats {
+  padding: 8px 14px;
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+.stat { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--faint); }
+.stat span { color: var(--accent2); }
+#backup-btn, #restore-btn {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--faint);
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+}
+#backup-btn:hover { color: var(--accent2); }
+#restore-btn:hover { color: #c07070; }
+#signout-btn {
+  margin-left: auto;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--faint);
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+}
+#signout-btn:hover { color: var(--accent); }
+
+/* ── MAIN CONTENT ── */
+#main {
+  position: absolute;
+  left: var(--sidebar-w);
+  top: 0; right: 0; bottom: 0;
+  display: flex;
+  flex-direction: column;
+  background: #12101a;
+  overflow: hidden;
+}
+
+/* ── WELCOME ── */
+#welcome {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 16px;
+  text-align: center;
+  padding: 40px;
+}
+#welcome .glyph { font-size: 48px; color: var(--border); }
+#welcome h2 { font-size: 28px; font-weight: 300; font-style: italic; color: var(--muted); }
+#welcome p { font-size: 14px; color: var(--faint); max-width: 360px; line-height: 1.6; }
+
+/* ── CONTENT VIEW ── */
+#content-view {
+  display: none;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+#content-header {
+  padding: 16px 24px 12px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  flex-shrink: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+#content-breadcrumb { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--muted); margin-bottom: 4px; }
+#content-breadcrumb span { color: var(--accent2); }
+#content-title { font-size: 20px; font-weight: 300; font-style: italic; color: var(--text); }
+#content-actions { display: flex; gap: 8px; align-items: center; flex-shrink: 0; padding-top: 2px; }
+.btn {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 5px 10px;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.15s;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.btn:hover { border-color: var(--accent2); color: var(--accent2); }
+.btn.primary { border-color: var(--accent); color: var(--accent); }
+.btn.primary:hover { background: var(--accent); color: var(--bg); }
+#save-indicator { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--faint); white-space: nowrap; }
+#save-indicator.saved { color: #6a9a6a; }
+#save-indicator.saving { color: var(--accent2); }
+#save-indicator.error { color: #c07070; }
+
+/* ── TOOLBAR ── */
+#toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  padding: 8px 14px;
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  align-items: center;
+}
+.tb-group { display: flex; gap: 2px; padding-right: 8px; border-right: 1px solid var(--border); }
+.tb-group:last-child { border-right: none; padding-right: 0; }
+.tb {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  padding: 5px 8px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.15s;
+  min-width: 30px;
+  min-height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.tb:hover { border-color: var(--accent2); color: var(--accent2); background: rgba(139,111,168,0.1); }
+.tb:active { background: rgba(192,132,160,0.2); }
+#color-pick {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  padding: 4px 5px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--muted);
+  cursor: pointer;
+  height: 28px;
+  outline: none;
+}
+
+/* ── EDITOR AREA ── */
+#editor-wrap {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px 28px 60px;
+}
+#editor-wrap::-webkit-scrollbar { width: 4px; }
+#editor-wrap::-webkit-scrollbar-thumb { background: var(--faint); border-radius: 2px; }
+
+#editor {
+  min-height: 100%;
+  outline: none;
+  color: var(--text);
+  font-family: 'Crimson Pro', serif;
+  font-size: 17px;
+  line-height: 1.8;
+  caret-color: var(--accent);
+  word-wrap: break-word;
+}
+#editor:empty::before {
+  content: attr(data-placeholder);
+  color: var(--faint);
+  font-style: italic;
+  pointer-events: none;
+}
+#editor b, #editor strong { font-weight: 600; }
+#editor i, #editor em { font-style: italic; }
+#editor u { text-decoration: underline; }
+#editor s, #editor strike { text-decoration: line-through; }
+#editor small { font-size: 0.75em; }
+#editor ul { padding-left: 1.5em; }
+#editor ol { padding-left: 1.5em; }
+#editor a { color: var(--accent2); text-decoration: underline; }
+
+/* ── MOBILE TOGGLE ── */
+#sidebar-toggle {
+  display: none;
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 50px; height: 50px;
+  background: var(--accent);
+  border: none;
+  border-radius: 50%;
+  color: var(--bg);
+  font-size: 20px;
+  cursor: pointer;
+  z-index: 50;
+  box-shadow: 0 4px 20px rgba(192,132,160,0.5);
+  align-items: center;
+  justify-content: center;
+}
+#overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 9;
+}
+
+/* ── SYNC DOT ── */
+#sync-dot {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--faint);
+  cursor: pointer;
+  margin-left: auto;
+}
+#sync-dot:hover { color: var(--accent); }
+
+/* ── NOTES ── */
+#notes-strip {
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  position: sticky;
+  top: 0;
+  z-index: 4;
+}
+#notes-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  cursor: pointer;
+  user-select: none;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--muted);
+  transition: color 0.15s;
+}
+#notes-toggle:hover { color: var(--accent2); }
+#notes-toggle-arrow { font-size: 9px; transition: transform 0.2s; display: inline-block; }
+#notes-toggle-arrow.open { transform: rotate(90deg); }
+#notes-toggle-label { letter-spacing: 0.1em; text-transform: uppercase; }
+#notes-toggle-hint { color: var(--faint); font-size: 10px; margin-left: auto; font-style: italic; font-family: 'Crimson Pro', serif; }
+#notes-body {
+  display: none;
+  border-top: 1px solid var(--border);
+}
+#notes-body.open { display: block; }
+#notes-editor {
+  min-height: 80px;
+  max-height: 240px;
+  overflow-y: auto;
+  padding: 12px 16px;
+  outline: none;
+  color: var(--text);
+  font-family: 'Crimson Pro', serif;
+  font-size: 15px;
+  line-height: 1.7;
+  caret-color: var(--accent2);
+  word-wrap: break-word;
+  background: var(--surface2);
+}
+#notes-editor:empty::before {
+  content: attr(data-placeholder);
+  color: var(--faint);
+  font-style: italic;
+  pointer-events: none;
+}
+#notes-editor b, #notes-editor strong { font-weight: 600; }
+#notes-editor i, #notes-editor em { font-style: italic; }
+#notes-editor u { text-decoration: underline; }
+#notes-editor s, #notes-editor strike { text-decoration: line-through; }
+#notes-editor small { font-size: 0.75em; }
+#notes-editor a { color: var(--accent2); text-decoration: underline; }
+#notes-editor::-webkit-scrollbar { width: 3px; }
+#notes-editor::-webkit-scrollbar-thumb { background: var(--faint); border-radius: 2px; }
+
+/* ── EDIT CONTROLS ── */
+.add-btn {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--faint);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 3px;
+  transition: color 0.15s, background 0.15s;
+  flex-shrink: 0;
+}
+.add-btn:hover { color: var(--accent2); background: rgba(139,111,168,0.1); }
+.char-header .add-btn { opacity: 0; transition: opacity 0.15s; }
+.char-header:hover .add-btn { opacity: 1; }
+.partner-header .add-btn { opacity: 0; transition: opacity 0.15s; }
+.partner-header:hover .add-btn { opacity: 1; }
+#add-char-btn {
+  display: block;
+  width: 100%;
+  padding: 10px 16px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--faint);
+  background: none;
+  border: none;
+  border-top: 1px solid var(--border);
+  cursor: pointer;
+  text-align: left;
+  transition: color 0.15s, background 0.15s;
+}
+#add-char-btn:hover { color: var(--accent2); background: var(--surface2); }
+.ctx-menu {
+  position: fixed;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 4px 0;
+  z-index: 100;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+  min-width: 140px;
+}
+.ctx-item {
+  display: block;
+  width: 100%;
+  padding: 8px 16px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.1s, color 0.1s;
+}
+.ctx-item:hover { background: var(--border); color: var(--text); }
+.ctx-item.danger { color: #c07070; }
+.ctx-item.danger:hover { background: rgba(192,112,112,0.15); }
+
+/* ── MOBILE ── */
+@media (max-width: 768px) {
+  #sidebar-toggle { display: flex; }
+
+  #sidebar {
+    transform: translateX(-100%);
+    width: 85vw;
+    max-width: 320px;
+    z-index: 20;
+  }
+  #sidebar.open { transform: translateX(0); }
+  #overlay.open { display: block; }
+
+  #main {
+    left: 0;
+  }
+
+  #content-header {
+    padding: 12px 14px 10px;
+    flex-wrap: wrap;
+  }
+
+  #content-title { font-size: 16px; }
+
+  #toolbar {
+    padding: 6px 10px;
+    position: sticky;
+    top: 0;
+    z-index: 5;
+  }
+  .tb { min-height: 34px; min-width: 34px; font-size: 12px; }
+  #color-pick { height: 34px; }
+
+  #editor-wrap {
+    padding: 16px 16px 80px;
+  }
+  #editor { font-size: 16px; }
+  #notes-editor { font-size: 15px; max-height: 180px; }
+  #notes-strip { position: sticky; top: 0; z-index: 4; }
+  .char-header .add-btn, .partner-header .add-btn { opacity: 1; }
+}
+</style>
+</head>
+<body>
+
+<!-- AUTH -->
+<div id="auth-screen">
+  <div class="glyph">✦</div>
+  <h1>scriptorxfabularum</h1>
+  <p>Sign in with Google to sync your thread drafts across all devices via Google Drive.</p>
+  <button id="sign-in-btn" onclick="signIn()">
+    <svg width="16" height="16" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+    Sign in with Google
+  </button>
+  <div id="auth-status">Loading...</div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <!-- Sidebar -->
+  <div id="sidebar">
+    <div id="sidebar-header">
+      <h1>✦ Thread Archive</h1>
+      <input type="text" id="search" placeholder="search characters..." oninput="filterChars(this.value)">
+    </div>
+    <div id="char-list"></div>
+    <button id="add-char-btn" onclick="addCharacter()">+ add character</button>
+    <div id="stats">
+      <div class="stat">chars <span id="stat-chars">49</span></div>
+      <div class="stat">threads <span id="stat-threads">0</span></div>
+      <div class="stat">partners <span id="stat-partners">0</span></div>
+      <div id="sync-dot" onclick="forceSave()" title="Force save">● drive</div>
+      <button id="backup-btn" onclick="downloadBackup()" title="Download backup">backup</button>
+      <button id="restore-btn" onclick="document.getElementById('restore-input').click()" title="Restore from backup">restore</button>
+      <input type="file" id="restore-input" accept=".json" style="display:none" onchange="restoreBackup(this)">
+      <button id="signout-btn" onclick="signOut()">sign out</button>
+    </div>
+  </div>
+
+  <!-- Main -->
+  <div id="main">
+    <div id="welcome">
+      <div class="glyph">✦</div>
+      <h2>scriptorxfabularum</h2>
+      <p>Select a thread from the sidebar to view or edit your draft. Syncs automatically to Google Drive.</p>
+    </div>
+
+    <div id="content-view">
+      <div id="content-header">
+        <div>
+          <div id="content-breadcrumb"></div>
+          <div id="content-title"></div>
+        </div>
+        <div id="content-actions">
+          <span id="save-indicator">● saved</span>
+          <button class="btn" id="scroll-btn" onclick="scrollJump()" title="Jump to top / bottom">⌄ end</button>
+<button class="btn primary" onclick="exportThread()">export</button>
+        </div>
+      </div>
+
+      <div id="toolbar">
+        <div class="tb-group">
+          <button class="tb" onmousedown="e=event;e.preventDefault();fmt('bold')" title="Bold"><b>B</b></button>
+          <button class="tb" onmousedown="e=event;e.preventDefault();fmt('italic')" title="Italic"><i>I</i></button>
+          <button class="tb" onmousedown="e=event;e.preventDefault();fmt('underline')" title="Underline"><u>U</u></button>
+          <button class="tb" onmousedown="e=event;e.preventDefault();fmt('strikeThrough')" title="Strike"><s>S</s></button>
+        </div>
+        <div class="tb-group">
+          <button class="tb" onmousedown="e=event;e.preventDefault();fmtBreak()" title="Reply break">break</button>
+          <button class="tb" onmousedown="e=event;e.preventDefault();fmtSmall()" title="Small">small</button>
+          <select id="color-pick" onchange="fmtColor(this.value)" title="Color">
+            <option value="">color</option>
+            <option value="#e8dded">default</option>
+            <option value="#c084a0">pink</option>
+            <option value="#8b6fa8">purple</option>
+            <option value="#6a9a6a">green</option>
+            <option value="#c07070">red</option>
+            <option value="#6a7a9a">blue</option>
+            <option value="#9a8a6a">gold</option>
+          </select>
+        </div>
+        <div class="tb-group">
+          <button class="tb" onmousedown="e=event;e.preventDefault();fmtLink()" title="Link">link</button>
+          <button class="tb" onmousedown="e=event;e.preventDefault();fmt('insertUnorderedList')" title="Bullets">• list</button>
+          <button class="tb" onmousedown="e=event;e.preventDefault();fmt('insertOrderedList')" title="Numbered">1. list</button>
+        </div>
+        <div class="tb-group">
+          <button class="tb" onmousedown="e=event;e.preventDefault();fmt('removeFormat')" title="Clear">clear</button>
+        </div>
+      </div>
+
+      <div id="notes-strip">
+        <div id="notes-toggle" onclick="toggleNotes()">
+          <span id="notes-toggle-arrow">▶</span>
+          <span id="notes-toggle-label">notes</span>
+          <span id="notes-toggle-hint"></span>
+        </div>
+        <div id="notes-body">
+          <div id="notes-editor" contenteditable="true" spellcheck="true" data-placeholder="Thread notes — plot points, established canon, reminders..."></div>
+        </div>
+      </div>
+
+      <div id="editor-wrap">
+        <div id="editor" contenteditable="true" spellcheck="true" data-placeholder="Draft your reply here..."></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mobile -->
+  <div id="overlay" onclick="closeSidebar()"></div>
+  <button id="sidebar-toggle" onclick="toggleSidebar()">☰</button>
+</div>
+
+<script>
+// ── CONFIG ──
+const CLIENT_ID = '598603615190-7sfvq4u1arlc3pc1jd381ao1hcpaqfte.apps.googleusercontent.com';
+const SCOPES = 'https://www.googleapis.com/auth/drive.appdata';
+const FILENAME = 'scriptorxfabularum_threads.json';
+
+// ── DATA ── (fallback for first-load migration)
+const DEFAULT_DATA = [
+  { name: "Alexander Carlisle", partners: [] },
+  { name: "Alistair Theirin", partners: [
+    { name: "aetatedraconis", threads: ["aetatedraconis3 (Brennon)"] },
+    { name: "chasindtrevelyan", threads: ["chasindtrevelyan2 (Daylen)"] },
+    { name: "frcstwarden", threads: ["frcstwarden1 (Helena)", "frcstwarden3 (Helena)"] }
+  ]},
+  { name: "Alex Karev", partners: [] },
+  { name: "Andrew DeLuca", partners: [] },
+  { name: "Astra Maras", partners: [
+    { name: "blackbirddown", threads: ["blackbirddown1 (Russo)"] }
+  ]},
+  { name: "Brandon Redding", partners: [
+    { name: "quiisquiliae", threads: ["quiisquiliae12 (Alaric) — Brandon/Alaric/Lill"] }
+  ]},
+  { name: "Brendan Cousland", partners: [
+    { name: "quiisquiliae", threads: ["quiisquiliae7 (Nick)"] }
+  ]},
+  { name: "Callie Torres", partners: [] },
+  { name: "Cara Cousland", partners: [] },
+  { name: "Cersei Lannister", partners: [
+    { name: "caracarnn", threads: ["caracarnn1 (Rand)"] }
+  ]},
+  { name: "Cristina Yang", partners: [
+    { name: "qapsiel", threads: ["qapsiel2 (Castiel)"] }
+  ]},
+  { name: "Dean Winchester", partners: [] },
+  { name: "Declan Hawke", partners: [] },
+  { name: "Dina Walters", partners: [] },
+  { name: "Draco Malfoy", partners: [
+    { name: "dcvium", threads: ["dcvium1 (Nimue)"] },
+    { name: "inabcck", threads: ["inabcck1 (Hermione)"] },
+    { name: "oftriwizards", threads: ["oftriwizards3 (Hermione)"] }
+  ]},
+  { name: "Faith Lehane", partners: [
+    { name: "anoddbunch", threads: ["anoddbunch1 (Robb)"] },
+    { name: "inabcck", threads: ["inabcck2 (Arya)"] }
+  ]},
+  { name: "Freya Amell", partners: [] },
+  { name: "Hermione Granger", partners: [] },
+  { name: "Isabela", partners: [
+    { name: "aetatedraconis", threads: ["aetatedraconis4 (Callum)"] }
+  ]},
+  { name: "Jax Callahan", partners: [
+    { name: "chasindtrevelyan", threads: ["chasindtrevelyan6 (Eli) — Awaiting Starter"] },
+    { name: "quiisquiliae", threads: ["quiisquiliae9 (Alaric)"] }
+  ]},
+  { name: "Julia Parker", partners: [] },
+  { name: "Kayla Hawke", partners: [] },
+  { name: "Lill Redding", partners: [
+    { name: "chasindtrevelyan", threads: ["chasindtrevelyan4 (Eli)", "chasindtrevelyan8 (Nate)"] },
+    { name: "oftriwizards", threads: ["oftriwizards4 (Bellatrix)"] },
+    { name: "quiisquiliae", threads: ["quiisquiliae2 (Talon)"] },
+    { name: "reformed-serial-killer", threads: ["reformedserialkiller1 (Damon)"] }
+  ]},
+  { name: "Lucifer", partners: [] },
+  { name: "Lucas Jackson", partners: [
+    { name: "qapsiel", threads: ["qapsiel1 (Castiel)"] }
+  ]},
+  { name: "Lucy Weasley", partners: [] },
+  { name: "Lyssa", partners: [
+    { name: "bloodedhearts", threads: ["bloodedhearts1 (Cassandra)"] }
+  ]},
+  { name: "Mark Sloan", partners: [] },
+  { name: "Matilde Carlisle", partners: [
+    { name: "caracarnn", threads: ["caracarnn4 (Rand)"] },
+    { name: "reformed-serial-killer", threads: ["reformedserialkiller2 (Damon)"] }
+  ]},
+  { name: "Maxwell Trevelyan", partners: [
+    { name: "inquisitionscout", threads: ["inquisitionscout1 (Harding)", "inquisitionscout2 (Harding)"] }
+  ]},
+  { name: "Mazikeen", partners: [] },
+  { name: "Michel de Chevin", partners: [] },
+  { name: "Morrigan", partners: [
+    { name: "chasindtrevelyan", threads: ["chasindtrevelyan1 (Daylen)"] },
+    { name: "quiisquiliae", threads: ["quiisquiliae8 (Finn)"] },
+    { name: "severthebl1ght", threads: ["severthebl1ght1 (Silas)"] }
+  ]},
+  { name: "Na'dya", partners: [] },
+  { name: "Owen Moore", partners: [
+    { name: "imafirefly", threads: ["imafirefly1 (Abby)"] }
+  ]},
+  { name: "Rhaella Targaryen", partners: [
+    { name: "anoddbunch", threads: ["anoddbunch2 (Jon)"] }
+  ]},
+  { name: "Robb Stark", partners: [
+    { name: "incissam", threads: ["incissam1 (Daenerys)", "incissam2 (Daenerys)"] }
+  ]},
+  { name: "Ros", partners: [
+    { name: "caracarnn", threads: ["caracarnn2 (Rand)"] }
+  ]},
+  { name: "Rose Weasley", partners: [] },
+  { name: "Roxanne Weasley", partners: [] },
+  { name: "Ryan Miller", partners: [
+    { name: "blackxhat", threads: ["blackxhat1 (Logan) — Awaiting Starter"] }
+  ]},
+  { name: "Sansa Stark", partners: [] },
+  { name: "The Experiment", partners: [
+    { name: "blackbirddown", threads: ["blackbirddown3 (Russo)"] },
+    { name: "hightownquccn", threads: ["hightownquccn1 (Sharon)"] },
+    { name: "pcraspcra", threads: ["pcraspcra3 (Bucky)"] },
+    { name: "quiisquiliae", threads: ["quiisquiliae10 (Talon)"] }
+  ]},
+  { name: "Theodore Nott", partners: [
+    { name: "oftriwizards", threads: ["oftriwizards1 (Hermione)", "oftriwizards2 (Hermione)"] },
+    { name: "qceensofkings", threads: ["qceensofkings1 (Isabella)"] }
+  ]},
+  { name: "Theresa Lewis", partners: [
+    { name: "uselessdevice", threads: ["omniishambles3 (Zachariah)"] }
+  ]},
+  { name: "The Witch", partners: [
+    { name: "caracarnn", threads: ["caracarnn3 (Rand)"] }
+  ]},
+  { name: "Trisha Patricks", partners: [] },
+  { name: "War", partners: [
+    { name: "blackbirddown", threads: ["blackbirddown2 (Russo)"] }
+  ]},
+  { name: "Yelena Belova", partners: [
+    { name: "blackbirddown", threads: ["blackbirddown4 (Russo)"] }
+  ]},
+  { name: "Yvesse", partners: [
+    { name: "aetatedraconis", threads: ["aetatedraconis1 (Krem)"] },
+    { name: "chasindtrevelyan", threads: ["chasindtrevelyan5 (Maxwell)"] },
+    { name: "frcstwarden", threads: ["frcstwarden2 (Helena)"] },
+    { name: "quiisquiliae", threads: ["quiisquiliae3 (Talon)"] },
+    { name: "starwrittenfates", threads: ["starwrittenfates5 (Ellana)"] }
+  ]},
+  { name: "Zevran Arainai", partners: [
+    { name: "aetatedraconis", threads: ["aetatedraconis2 (Amara)"] },
+    { name: "chasindtrevelyan", threads: ["chasindtrevelyan3 (Daylen)"] },
+    { name: "frcstwarden", threads: ["frcstwarden4 (Helena)"] }
+  ]}
+];
+
+// ── STATE ──
+let tokenClient = null;
+let accessToken = null;
+let driveFileId = null;
+let allDrafts = {};
+let DATA = []; // loaded from Drive on startup
+let currentKey = null;
+let saveTimer = null;
+let isDirty = false;
+
+// ── AUTH ──
+function loadScript(src, cb) {
+  const s = document.createElement('script');
+  s.src = src;
+  s.onload = cb;
+  s.onerror = () => setStatus('Failed to load Google APIs.');
+  document.head.appendChild(s);
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  setStatus('Loading Google APIs...');
+  loadScript('https://apis.google.com/js/api.js', () => {
+    loadScript('https://accounts.google.com/gsi/client', () => {
+      gapi.load('client', async () => {
+        await gapi.client.init({
+          discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'],
+        });
+
+        tokenClient = google.accounts.oauth2.initTokenClient({
+          client_id: CLIENT_ID,
+          scope: SCOPES,
+          prompt: '',
+          callback: async (resp) => {
+            if (resp.error) {
+              // If this was a silent refresh (no UI), don't show error — just set the token
+              if (resp.error !== 'access_denied') {
+                accessToken = null;
+              }
+              if (document.getElementById('app').style.display === 'none') {
+                setStatus('Sign-in failed. Please try again.');
+                document.getElementById('sign-in-btn').style.display = 'flex';
+              }
+              return;
+            }
+            accessToken = resp.access_token;
+            gapi.client.setToken({ access_token: accessToken });
+            const expiry = Date.now() + (resp.expires_in * 1000);
+            localStorage.setItem('sfx_token', accessToken);
+            localStorage.setItem('sfx_expiry', expiry);
+            // Only load and show app if we're not already in the app
+            if (document.getElementById('app').style.display === 'none') {
+              await loadFromDrive();
+              showApp();
+            }
+          }
+        });
+
+        // Try cached token first
+        const cached = localStorage.getItem('sfx_token');
+        const expiry = parseInt(localStorage.getItem('sfx_expiry') || '0');
+        if (cached && expiry > Date.now() + 60000) {
+          accessToken = cached;
+          gapi.client.setToken({ access_token: accessToken });
+          setStatus('Reconnecting...');
+          await loadFromDrive();
+          showApp();
+        } else {
+          // On mobile, skip the silent popup attempt — it stalls in mobile browsers
+          if (isMobile) {
+            setStatus('Ready — click to sign in.');
+            document.getElementById('sign-in-btn').style.display = 'flex';
+          } else {
+            // Silent refresh attempt (desktop only)
+            setStatus('Signing in...');
+            tokenClient.requestAccessToken({ prompt: '' });
+            setTimeout(() => {
+              if (!accessToken) {
+                setStatus('Ready — click to sign in.');
+                document.getElementById('sign-in-btn').style.display = 'flex';
+              }
+            }, 3000);
+          }
+        }
+      });
+    });
+  });
+});
+
+function setStatus(msg) { document.getElementById('auth-status').textContent = msg; }
+const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+function signIn() {
+  setStatus('Opening sign-in...');
+  // On mobile, use a fresh consent prompt — silent re-prompt stalls in mobile browsers
+  tokenClient.requestAccessToken({ prompt: isMobile ? 'consent' : 'select_account' });
+}
+function signOut() {
+  localStorage.removeItem('sfx_token');
+  localStorage.removeItem('sfx_expiry');
+  location.reload();
+}
+
+function showApp() {
+  document.getElementById('auth-screen').style.display = 'none';
+  const app = document.getElementById('app');
+  app.style.display = 'block';
+  buildSidebar();
+  updateStats();
+}
+
+// ── DRIVE ──
+async function loadFromDrive() {
+  setSyncDot('● loading');
+  try {
+    const res = await gapi.client.drive.files.list({
+      spaces: 'appDataFolder',
+      q: `name = '${FILENAME}'`,
+      fields: 'files(id)',
+    });
+    if (res.result.files.length > 0) {
+      driveFileId = res.result.files[0].id;
+      // Use raw fetch instead of gapi to avoid encoding issues with data.body
+      const resp = await fetch(
+        `https://www.googleapis.com/drive/v3/files/${driveFileId}?alt=media`,
+        { headers: { 'Authorization': `Bearer ${accessToken}` } }
+      );
+      if (!resp.ok) throw new Error(`Load failed: ${resp.status}`);
+      const text = await resp.text();
+      let parsed;
+      try {
+        parsed = JSON.parse(text);
+      } catch(parseErr) {
+        console.error('Failed to parse drafts JSON:', parseErr);
+        allDrafts = allDrafts || {};
+        DATA = DATA.length ? DATA : DEFAULT_DATA;
+        setSyncDot('● parse error');
+        return;
+      }
+      // Migration: if old format (no structure key), migrate now
+      if (parsed && parsed.structure) {
+        DATA = parsed.structure;
+        allDrafts = parsed.drafts || {};
+      } else {
+        // Old format — migrate to new format
+        DATA = DEFAULT_DATA;
+        allDrafts = parsed || {};
+        // Save migrated format immediately
+        await persistStructure();
+      }
+    } else {
+      DATA = DEFAULT_DATA;
+      allDrafts = {};
+    }
+    setSyncDot('● synced');
+  } catch(e) {
+    console.error(e);
+    // Don't reset allDrafts on error — keep whatever was loaded before
+    allDrafts = allDrafts || {};
+    setSyncDot('● offline');
+  }
+}
+
+// Refresh the access token silently, returns true if successful
+function refreshToken() {
+  return new Promise((resolve) => {
+    tokenClient.requestAccessToken({ prompt: '' });
+    // Give it 5 seconds to come back
+    const check = setInterval(() => {
+      if (accessToken) { clearInterval(check); resolve(true); }
+    }, 200);
+    setTimeout(() => { clearInterval(check); resolve(false); }, 5000);
+  });
+}
+
+async function doSaveRequest(token, body) {
+  if (driveFileId) {
+    return await fetch(`https://www.googleapis.com/upload/drive/v3/files/${driveFileId}?uploadType=media`, {
+      method: 'PATCH',
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body
+    });
+  } else {
+    const meta = await fetch('https://www.googleapis.com/drive/v3/files', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: FILENAME, parents: ['appDataFolder'] })
+    });
+    driveFileId = (await meta.json()).id;
+    return await fetch(`https://www.googleapis.com/upload/drive/v3/files/${driveFileId}?uploadType=media`, {
+      method: 'PATCH',
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body
+    });
+  }
+}
+
+async function saveToDrive() {
+  if (!accessToken) return;
+  setSyncDot('● saving');
+  const body = JSON.stringify({ structure: DATA, drafts: allDrafts });
+  try {
+    let resp = await doSaveRequest(accessToken, body);
+
+    // If token expired, refresh and retry once
+    if (resp.status === 401) {
+      setSyncDot('● refreshing token...');
+      const oldToken = accessToken;
+      accessToken = null; // clear so refreshToken can detect the new one
+      const ok = await refreshToken();
+      if (!ok || !accessToken) {
+        setSyncDot('● session expired — please reload');
+        setIndicator('error');
+        return;
+      }
+      // Update gapi token too
+      gapi.client.setToken({ access_token: accessToken });
+      resp = await doSaveRequest(accessToken, body);
+    }
+
+    if (!resp.ok) {
+      console.error('Save failed:', resp.status);
+      setSyncDot('● error');
+      setIndicator('error');
+      return;
+    }
+
+    setSyncDot('● synced');
+    setIndicator('saved');
+    isDirty = false;
+  } catch(e) {
+    console.error(e);
+    setSyncDot('● error');
+    setIndicator('error');
+  }
+}
+
+async function downloadBackup() {
+  if (!accessToken || !driveFileId) {
+    alert('Not connected to Drive — please wait for sync before backing up.');
+    return;
+  }
+  try {
+    const resp = await fetch(
+      `https://www.googleapis.com/drive/v3/files/${driveFileId}?alt=media`,
+      { headers: { 'Authorization': `Bearer ${accessToken}` } }
+    );
+    if (!resp.ok) throw new Error(resp.status);
+    const text = await resp.text();
+    const blob = new Blob([text], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    const date = new Date().toISOString().slice(0, 10);
+    a.download = `scriptorxfabularum_backup_${date}.json`;
+    a.click();
+  } catch(e) {
+    alert('Backup failed — try again or check your connection.');
+    console.error(e);
+  }
+}
+
+async function restoreBackup(input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (!confirm('This will overwrite ALL your current drafts with the backup file. Are you sure?')) {
+    input.value = '';
+    return;
+  }
+  try {
+    const text = await file.text();
+    let parsed;
+    try {
+      parsed = JSON.parse(text);
+    } catch(e) {
+      alert('This file doesn\'t look like a valid backup — could not read it.');
+      input.value = '';
+      return;
+    }
+    if (parsed && parsed.structure) {
+      DATA = parsed.structure;
+      allDrafts = parsed.drafts || {};
+    } else {
+      // Old format backup
+      DATA = DEFAULT_DATA;
+      allDrafts = parsed;
+    }
+    await saveToDrive();
+    buildSidebar();
+    updateStats();
+    alert('Restore complete! Your drafts have been saved to Drive.');
+    // Reload the current thread if one is open
+    if (currentKey) {
+      const editor = document.getElementById('editor');
+      editor.innerHTML = allDrafts[currentKey] || '';
+      const notesEditor = document.getElementById('notes-editor');
+      notesEditor.innerHTML = allDrafts[currentKey + '::notes'] || '';
+      updateNotesHint();
+    }
+  } catch(e) {
+    alert('Restore failed — your existing drafts are untouched.');
+    console.error(e);
+  }
+  input.value = '';
+}
+
+function forceSave() {
+  if (currentKey) {
+    allDrafts[currentKey] = document.getElementById('editor').innerHTML;
+    allDrafts[currentKey + '::notes'] = document.getElementById('notes-editor').innerHTML;
+  }
+  saveToDrive();
+}
+
+// ── UI HELPERS ──
+function setSyncDot(msg) { document.getElementById('sync-dot').textContent = msg; }
+function setIndicator(state) {
+  const el = document.getElementById('save-indicator');
+  el.className = state;
+  el.textContent = state === 'saved' ? '● saved' : state === 'saving' ? '● saving...' : state === 'error' ? '● error' : '● unsaved';
+}
+
+function updateStats() {
+  let t = 0, p = 0;
+  DATA.forEach(c => { p += c.partners.length; c.partners.forEach(pt => t += pt.threads.length); });
+  document.getElementById('stat-chars').textContent = DATA.length;
+  document.getElementById('stat-threads').textContent = t;
+  document.getElementById('stat-partners').textContent = p;
+}
+
+// Save just the structure to Drive (used after edits)
+async function persistStructure() {
+  const body = JSON.stringify({ structure: DATA, drafts: allDrafts });
+  if (!driveFileId) { await saveToDrive(); return; }
+  try {
+    const resp = await doSaveRequest(accessToken, body);
+    if (resp.status === 401) {
+      const ok = await refreshToken();
+      if (ok) await doSaveRequest(accessToken, body);
+    }
+  } catch(e) { console.error('persistStructure error:', e); }
+}
+
+// ── SIDEBAR ──
+
+// Context menu
+let ctxMenu = null;
+function closeCtxMenu() { if (ctxMenu) { ctxMenu.remove(); ctxMenu = null; } }
+document.addEventListener('click', closeCtxMenu);
+
+function showCtxMenu(x, y, items) {
+  closeCtxMenu();
+  ctxMenu = document.createElement('div');
+  ctxMenu.className = 'ctx-menu';
+  items.forEach(({ label, action, danger }) => {
+    const btn = document.createElement('button');
+    btn.className = 'ctx-item' + (danger ? ' danger' : '');
+    btn.textContent = label;
+    btn.onclick = (e) => { e.stopPropagation(); closeCtxMenu(); action(); };
+    ctxMenu.appendChild(btn);
+  });
+  // Position within viewport
+  document.body.appendChild(ctxMenu);
+  const rect = ctxMenu.getBoundingClientRect();
+  ctxMenu.style.left = Math.min(x, window.innerWidth - rect.width - 8) + 'px';
+  ctxMenu.style.top = Math.min(y, window.innerHeight - rect.height - 8) + 'px';
+}
+
+// Add / rename / delete characters
+function addCharacter() {
+  const name = prompt('Character name:');
+  if (!name || !name.trim()) return;
+  if (DATA.some(c => c.name.toLowerCase() === name.trim().toLowerCase())) {
+    alert('A character with that name already exists.');
+    return;
+  }
+  DATA.push({ name: name.trim(), partners: [] });
+  DATA.sort((a, b) => a.name.localeCompare(b.name));
+  persistStructure();
+  buildSidebar();
+  updateStats();
+}
+
+function renameChar(charName) {
+  const newName = prompt('Rename character:', charName);
+  if (!newName || !newName.trim() || newName.trim() === charName) return;
+  const char = DATA.find(c => c.name === charName);
+  if (!char) return;
+  // Migrate all draft keys
+  Object.keys(allDrafts).forEach(k => {
+    if (k.startsWith(charName + '::')) {
+      allDrafts[k.replace(charName + '::', newName.trim() + '::')] = allDrafts[k];
+      delete allDrafts[k];
+    }
+  });
+  char.name = newName.trim();
+  DATA.sort((a, b) => a.name.localeCompare(b.name));
+  if (currentKey && currentKey.startsWith(charName + '::')) {
+    currentKey = currentKey.replace(charName + '::', newName.trim() + '::');
+  }
+  persistStructure();
+  buildSidebar();
+  updateStats();
+}
+
+function deleteChar(charName) {
+  const char = DATA.find(c => c.name === charName);
+  if (!char) return;
+  const threadCount = char.partners.reduce((n, p) => n + p.threads.length, 0);
+  const msg = threadCount > 0
+    ? `Delete ${charName} and all ${threadCount} thread draft(s) under them? This cannot be undone.`
+    : `Delete ${charName}?`;
+  if (!confirm(msg)) return;
+  // Delete all drafts under this character
+  Object.keys(allDrafts).forEach(k => { if (k.startsWith(charName + '::')) delete allDrafts[k]; });
+  const idx = DATA.findIndex(c => c.name === charName);
+  if (idx > -1) DATA.splice(idx, 1);
+  if (currentKey && currentKey.startsWith(charName + '::')) {
+    currentKey = null;
+    document.getElementById('content-view').style.display = 'none';
+    document.getElementById('welcome').style.display = 'flex';
+  }
+  persistStructure();
+  buildSidebar();
+  updateStats();
+}
+
+// Add / rename / delete partners
+function addPartner(charName) {
+  const name = prompt('Partner blog name:');
+  if (!name || !name.trim()) return;
+  const char = DATA.find(c => c.name === charName);
+  if (!char) return;
+  if (char.partners.some(p => p.name.toLowerCase() === name.trim().toLowerCase())) {
+    alert('That partner already exists under this character.');
+    return;
+  }
+  char.partners.push({ name: name.trim(), threads: [] });
+  persistStructure();
+  buildSidebar();
+  updateStats();
+}
+
+function renamePartner(charName, partnerName) {
+  const newName = prompt('Rename partner:', partnerName);
+  if (!newName || !newName.trim() || newName.trim() === partnerName) return;
+  const char = DATA.find(c => c.name === charName);
+  if (!char) return;
+  const partner = char.partners.find(p => p.name === partnerName);
+  if (!partner) return;
+  const oldPrefix = `${charName}::${partnerName}::`;
+  const newPrefix = `${charName}::${newName.trim()}::`;
+  Object.keys(allDrafts).forEach(k => {
+    if (k.startsWith(oldPrefix)) {
+      allDrafts[k.replace(oldPrefix, newPrefix)] = allDrafts[k];
+      delete allDrafts[k];
+    }
+  });
+  partner.name = newName.trim();
+  if (currentKey && currentKey.startsWith(oldPrefix)) {
+    currentKey = currentKey.replace(oldPrefix, newPrefix);
+  }
+  persistStructure();
+  buildSidebar();
+  updateStats();
+}
+
+function deletePartner(charName, partnerName) {
+  const char = DATA.find(c => c.name === charName);
+  if (!char) return;
+  const partner = char.partners.find(p => p.name === partnerName);
+  if (!partner) return;
+  const msg = partner.threads.length > 0
+    ? `Delete ${partnerName} and all ${partner.threads.length} thread draft(s)? This cannot be undone.`
+    : `Delete ${partnerName}?`;
+  if (!confirm(msg)) return;
+  const prefix = `${charName}::${partnerName}::`;
+  Object.keys(allDrafts).forEach(k => { if (k.startsWith(prefix)) delete allDrafts[k]; });
+  char.partners = char.partners.filter(p => p.name !== partnerName);
+  if (currentKey && currentKey.startsWith(prefix)) {
+    currentKey = null;
+    document.getElementById('content-view').style.display = 'none';
+    document.getElementById('welcome').style.display = 'flex';
+  }
+  persistStructure();
+  buildSidebar();
+  updateStats();
+}
+
+// Add / rename / delete threads
+function addThread(charName, partnerName) {
+  const name = prompt('Thread title (e.g. threadid1 (CharName)):');
+  if (!name || !name.trim()) return;
+  const char = DATA.find(c => c.name === charName);
+  if (!char) return;
+  const partner = char.partners.find(p => p.name === partnerName);
+  if (!partner) return;
+  partner.threads.push(name.trim());
+  persistStructure();
+  buildSidebar();
+  updateStats();
+}
+
+function renameThread(charName, partnerName, threadName) {
+  const newName = prompt('Rename thread:', threadName);
+  if (!newName || !newName.trim() || newName.trim() === threadName) return;
+  const char = DATA.find(c => c.name === charName);
+  if (!char) return;
+  const partner = char.partners.find(p => p.name === partnerName);
+  if (!partner) return;
+  const oldKey = `${charName}::${partnerName}::${threadName}`;
+  const newKey = `${charName}::${partnerName}::${newName.trim()}`;
+  if (allDrafts[oldKey] !== undefined) {
+    allDrafts[newKey] = allDrafts[oldKey];
+    delete allDrafts[oldKey];
+  }
+  if (allDrafts[oldKey + '::notes'] !== undefined) {
+    allDrafts[newKey + '::notes'] = allDrafts[oldKey + '::notes'];
+    delete allDrafts[oldKey + '::notes'];
+  }
+  const ti = partner.threads.indexOf(threadName);
+  if (ti > -1) partner.threads[ti] = newName.trim();
+  if (currentKey === oldKey) currentKey = newKey;
+  persistStructure();
+  buildSidebar();
+  updateStats();
+}
+
+function deleteThread(charName, partnerName, threadName) {
+  const key = `${charName}::${partnerName}::${threadName}`;
+  const hasDraft = !!allDrafts[key];
+  const msg = hasDraft
+    ? `Delete "${threadName}" and its draft? This cannot be undone.`
+    : `Delete "${threadName}"?`;
+  if (!confirm(msg)) return;
+  delete allDrafts[key];
+  delete allDrafts[key + '::notes'];
+  const char = DATA.find(c => c.name === charName);
+  if (!char) return;
+  const partner = char.partners.find(p => p.name === partnerName);
+  if (!partner) return;
+  partner.threads = partner.threads.filter(t => t !== threadName);
+  if (currentKey === key) {
+    currentKey = null;
+    document.getElementById('content-view').style.display = 'none';
+    document.getElementById('welcome').style.display = 'flex';
+  }
+  persistStructure();
+  buildSidebar();
+  updateStats();
+}
+
+function buildSidebar(filter = '') {
+  const list = document.getElementById('char-list');
+  list.innerHTML = '';
+  const lf = filter.toLowerCase();
+
+  DATA.forEach(char => {
+    const hasThreads = char.partners.length > 0;
+
+    // When filtering, determine which partners (and threads) match
+    let visiblePartners = char.partners;
+    if (lf) {
+      const charNameMatches = char.name.toLowerCase().includes(lf);
+      if (charNameMatches) {
+        // Show all partners/threads under this character
+        visiblePartners = char.partners;
+      } else {
+        // Filter to only partners/threads that match
+        visiblePartners = char.partners.map(p => {
+          if (p.name.toLowerCase().includes(lf)) return p; // whole partner matches
+          const matchingThreads = p.threads.filter(t => t.toLowerCase().includes(lf));
+          return matchingThreads.length ? { ...p, threads: matchingThreads } : null;
+        }).filter(Boolean);
+      }
+      if (!visiblePartners.length && !char.name.toLowerCase().includes(lf)) return;
+    }
+
+    const section = document.createElement('div');
+    section.className = 'char-section';
+
+    const header = document.createElement('div');
+    header.className = 'char-header';
+    header.innerHTML = `<span class="char-name ${hasThreads ? '' : 'no-threads'}">${char.name}</span><button class="add-btn" title="Options">···</button>${hasThreads ? '<span class="char-toggle">▶</span>' : ''}`;
+    header.querySelector('.add-btn').addEventListener('click', e => {
+      e.stopPropagation();
+      showCtxMenu(e.clientX, e.clientY, [
+        { label: '+ add partner', action: () => addPartner(char.name) },
+        { label: 'rename character', action: () => renameChar(char.name) },
+        { label: 'delete character', action: () => deleteChar(char.name), danger: true },
+      ]);
+    });
+
+    const body = document.createElement('div');
+    body.className = 'char-body';
+
+    if (hasThreads) {
+      if (lf) { body.classList.add('open'); header.querySelector('.char-toggle').classList.add('open'); }
+      header.addEventListener('click', () => {
+        const open = body.classList.toggle('open');
+        header.querySelector('.char-toggle').classList.toggle('open', open);
+      });
+
+      visiblePartners.forEach(partner => {
+        const pH = document.createElement('div');
+        pH.className = 'partner-header';
+        pH.innerHTML = `<span class="partner-name">${partner.name}</span><button class="add-btn" title="Options">···</button><span class="partner-toggle">▶</span>`;
+        pH.querySelector('.add-btn').addEventListener('click', e => {
+          e.stopPropagation();
+          showCtxMenu(e.clientX, e.clientY, [
+            { label: '+ add thread', action: () => addThread(char.name, partner.name) },
+            { label: 'rename partner', action: () => renamePartner(char.name, partner.name) },
+            { label: 'delete partner', action: () => deletePartner(char.name, partner.name), danger: true },
+          ]);
+        });
+        const pBody = document.createElement('div');
+        pBody.className = 'partner-body';
+        if (lf) { pBody.classList.add('open'); pH.querySelector('.partner-toggle').classList.add('open'); }
+        pH.addEventListener('click', e => {
+          e.stopPropagation();
+          const open = pBody.classList.toggle('open');
+          pH.querySelector('.partner-toggle').classList.toggle('open', open);
+        });
+        partner.threads.forEach(thread => {
+          const key = `${char.name}::${partner.name}::${thread}`;
+          const item = document.createElement('div');
+          item.className = 'thread-item';
+          item.dataset.key = key;
+          item.innerHTML = `<span class="thread-dot"></span><span class="thread-label">${thread}</span><button class="add-btn thread-opts" title="Options">···</button>`;
+          item.querySelector('.thread-label').addEventListener('click', e => { e.stopPropagation(); openThread(char.name, partner.name, thread, key, item); });
+          item.querySelector('.thread-dot').addEventListener('click', e => { e.stopPropagation(); openThread(char.name, partner.name, thread, key, item); });
+          item.querySelector('.thread-opts').addEventListener('click', e => {
+            e.stopPropagation();
+            showCtxMenu(e.clientX, e.clientY, [
+              { label: 'rename thread', action: () => renameThread(char.name, partner.name, thread) },
+              { label: 'delete thread', action: () => deleteThread(char.name, partner.name, thread), danger: true },
+            ]);
+          });
+          pBody.appendChild(item);
+        });
+        const ps = document.createElement('div');
+        ps.appendChild(pH); ps.appendChild(pBody);
+        body.appendChild(ps);
+      });
+    } else {
+      header.style.cursor = 'default';
+    }
+
+    section.appendChild(header);
+    section.appendChild(body);
+    list.appendChild(section);
+  });
+}
+
+function filterChars(val) { buildSidebar(val); }
+
+// ── OPEN THREAD ──
+function openThread(charName, partnerName, threadName, key, el) {
+  if (currentKey && isDirty) {
+    allDrafts[currentKey] = document.getElementById('editor').innerHTML;
+    saveToDrive();
+  }
+
+  document.querySelectorAll('.thread-item.active').forEach(e => e.classList.remove('active'));
+  el.classList.add('active');
+  currentKey = key;
+  isDirty = false;
+
+  if (window.innerWidth <= 768) closeSidebar();
+
+  document.getElementById('welcome').style.display = 'none';
+  const cv = document.getElementById('content-view');
+  cv.style.display = 'flex';
+
+  document.getElementById('content-breadcrumb').innerHTML = `<span>${charName}</span> / ${partnerName}`;
+  document.getElementById('content-title').textContent = threadName;
+
+  const editor = document.getElementById('editor');
+  editor.innerHTML = allDrafts[key] || '';
+  setIndicator('saved');
+
+  // Load notes for this thread
+  const notesEditor = document.getElementById('notes-editor');
+  notesEditor.innerHTML = allDrafts[key + '::notes'] || '';
+  updateNotesHint();
+
+  notesEditor.oninput = () => {
+    allDrafts[key + '::notes'] = notesEditor.innerHTML;
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(saveToDrive, 1500);
+  };
+
+  const triggerSave = () => {
+    isDirty = true;
+    setIndicator('unsaved');
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => {
+      allDrafts[key] = editor.innerHTML;
+      saveToDrive();
+    }, 1500);
+  };
+  editor.oninput = triggerSave;
+  editor.addEventListener('paste', () => setTimeout(triggerSave, 0));
+
+  editor.focus();
+}
+
+// ── NOTES ──
+function toggleNotes() {
+  const body = document.getElementById('notes-body');
+  const arrow = document.getElementById('notes-toggle-arrow');
+  const open = body.classList.toggle('open');
+  arrow.classList.toggle('open', open);
+  if (open) document.getElementById('notes-editor').focus();
+}
+
+function updateNotesHint() {
+  const notesEditor = document.getElementById('notes-editor');
+  const hint = document.getElementById('notes-toggle-hint');
+  const hasNotes = notesEditor.innerText.trim().length > 0;
+  hint.textContent = hasNotes ? '● has notes' : '';
+}
+
+// Update hint whenever notes change
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('notes-editor').addEventListener('input', updateNotesHint);
+});
+
+// ── THREAD ACTIONS ──
+function clearThread() {
+  if (!currentKey) return;
+  if (!confirm('Clear all content for this thread?')) return;
+  delete allDrafts[currentKey];
+  document.getElementById('editor').innerHTML = '';
+  saveToDrive();
+}
+
+function scrollJump() {
+  const wrap = document.getElementById('editor-wrap');
+  const btn = document.getElementById('scroll-btn');
+  const atBottom = wrap.scrollHeight - wrap.scrollTop - wrap.clientHeight < 40;
+  if (atBottom) {
+    wrap.scrollTo({ top: 0, behavior: 'smooth' });
+    btn.textContent = '⌄ end';
+  } else {
+    wrap.scrollTo({ top: wrap.scrollHeight, behavior: 'smooth' });
+    btn.textContent = '⌃ top';
+  }
+}
+
+// Keep scroll button label in sync with actual scroll position
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('editor-wrap').addEventListener('scroll', () => {
+    const wrap = document.getElementById('editor-wrap');
+    const btn = document.getElementById('scroll-btn');
+    if (!btn) return;
+    const atBottom = wrap.scrollHeight - wrap.scrollTop - wrap.clientHeight < 40;
+    btn.textContent = atBottom ? '⌃ top' : '⌄ end';
+  });
+});
+
+function exportThread() {
+  if (!currentKey) return;
+  const text = document.getElementById('editor').innerText;
+  const blob = new Blob([text], { type: 'text/plain' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = currentKey.replace(/::/g, ' — ') + '.txt';
+  a.click();
+}
+
+// ── RICH TEXT ──
+function fmt(cmd) {
+  document.getElementById('editor').focus();
+  document.execCommand(cmd, false, null);
+}
+
+function fmtBreak() {
+  const editor = document.getElementById('editor');
+  editor.focus();
+  document.execCommand('insertHTML', false,
+    '<p style="text-align:center;color:#7a6d82;letter-spacing:0.3em;margin:0.6em 0;user-select:none;" contenteditable="false">· · · ✦ · · ·</p>' +
+    '<p style="text-align:left;"></p>'
+  );
+  // Make sure caret ends up in the fresh paragraph, left-aligned
+  const sel = window.getSelection();
+  if (sel && sel.rangeCount) {
+    const range = sel.getRangeAt(0);
+    range.collapse(false);
+    sel.removeAllRanges();
+    sel.addRange(range);
+  }
+}
+
+function fmtSmall() {
+  const sel = window.getSelection();
+  if (!sel || sel.isCollapsed) return;
+  document.execCommand('insertHTML', false, '<small>' + sel.toString() + '</small>');
+}
+
+function fmtColor(val) {
+  if (!val) return;
+  document.getElementById('editor').focus();
+  document.execCommand('foreColor', false, val);
+  document.getElementById('color-pick').value = '';
+}
+
+function fmtLink() {
+  const url = prompt('Enter URL:');
+  if (url) { document.getElementById('editor').focus(); document.execCommand('createLink', false, url); }
+}
+
+// ── MOBILE SIDEBAR ──
+function toggleSidebar() {
+  const open = document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('overlay').classList.toggle('open', open);
+  document.getElementById('sidebar-toggle').textContent = open ? '✕' : '☰';
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('overlay').classList.remove('open');
+  document.getElementById('sidebar-toggle').textContent = '☰';
+}
+
+// ── SAVE BEFORE CLOSE ──
+window.addEventListener('beforeunload', (e) => {
+  if (currentKey) {
+    allDrafts[currentKey + '::notes'] = document.getElementById('notes-editor').innerHTML;
+    allDrafts[currentKey] = document.getElementById('editor').innerHTML;
+    saveToDrive();
+  }
+  e.preventDefault();
+  e.returnValue = '';
+  return '';
+});
+</script>
+</body>
+</html>
