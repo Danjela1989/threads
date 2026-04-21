@@ -186,7 +186,7 @@ html, body {
 }
 .stat { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--faint); }
 .stat span { color: var(--accent2); }
-#backup-btn {
+#backup-btn, #restore-btn {
   font-family: 'JetBrains Mono', monospace;
   font-size: 10px;
   color: var(--faint);
@@ -196,6 +196,7 @@ html, body {
   padding: 0;
 }
 #backup-btn:hover { color: var(--accent2); }
+#restore-btn:hover { color: #c07070; }
 #signout-btn {
   margin-left: auto;
   font-family: 'JetBrains Mono', monospace;
@@ -525,6 +526,8 @@ html, body {
       <div class="stat">partners <span id="stat-partners">0</span></div>
       <div id="sync-dot" onclick="forceSave()" title="Force save">● drive</div>
       <button id="backup-btn" onclick="downloadBackup()" title="Download backup">backup</button>
+      <button id="restore-btn" onclick="document.getElementById('restore-input').click()" title="Restore from backup">restore</button>
+      <input type="file" id="restore-input" accept=".json" style="display:none" onchange="restoreBackup(this)">
       <button id="signout-btn" onclick="signOut()">sign out</button>
     </div>
   </div>
@@ -987,6 +990,41 @@ async function downloadBackup() {
     alert('Backup failed — try again or check your connection.');
     console.error(e);
   }
+}
+
+async function restoreBackup(input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (!confirm('This will overwrite ALL your current drafts with the backup file. Are you sure?')) {
+    input.value = '';
+    return;
+  }
+  try {
+    const text = await file.text();
+    let parsed;
+    try {
+      parsed = JSON.parse(text);
+    } catch(e) {
+      alert('This file doesn\'t look like a valid backup — could not read it.');
+      input.value = '';
+      return;
+    }
+    allDrafts = parsed;
+    await saveToDrive();
+    alert('Restore complete! Your drafts have been saved to Drive.');
+    // Reload the current thread if one is open
+    if (currentKey) {
+      const editor = document.getElementById('editor');
+      editor.innerHTML = allDrafts[currentKey] || '';
+      const notesEditor = document.getElementById('notes-editor');
+      notesEditor.innerHTML = allDrafts[currentKey + '::notes'] || '';
+      updateNotesHint();
+    }
+  } catch(e) {
+    alert('Restore failed — your existing drafts are untouched.');
+    console.error(e);
+  }
+  input.value = '';
 }
 
 function forceSave() {
