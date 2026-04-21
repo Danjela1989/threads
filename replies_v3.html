@@ -186,6 +186,16 @@ html, body {
 }
 .stat { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--faint); }
 .stat span { color: var(--accent2); }
+#backup-btn {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--faint);
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+}
+#backup-btn:hover { color: var(--accent2); }
 #signout-btn {
   margin-left: auto;
   font-family: 'JetBrains Mono', monospace;
@@ -514,6 +524,7 @@ html, body {
       <div class="stat">threads <span id="stat-threads">0</span></div>
       <div class="stat">partners <span id="stat-partners">0</span></div>
       <div id="sync-dot" onclick="forceSave()" title="Force save">● drive</div>
+      <button id="backup-btn" onclick="downloadBackup()" title="Download backup">backup</button>
       <button id="signout-btn" onclick="signOut()">sign out</button>
     </div>
   </div>
@@ -951,6 +962,30 @@ async function saveToDrive() {
     console.error(e);
     setSyncDot('● error');
     setIndicator('error');
+  }
+}
+
+async function downloadBackup() {
+  if (!accessToken || !driveFileId) {
+    alert('Not connected to Drive — please wait for sync before backing up.');
+    return;
+  }
+  try {
+    const resp = await fetch(
+      `https://www.googleapis.com/drive/v3/files/${driveFileId}?alt=media`,
+      { headers: { 'Authorization': `Bearer ${accessToken}` } }
+    );
+    if (!resp.ok) throw new Error(resp.status);
+    const text = await resp.text();
+    const blob = new Blob([text], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    const date = new Date().toISOString().slice(0, 10);
+    a.download = `scriptorxfabularum_backup_${date}.json`;
+    a.click();
+  } catch(e) {
+    alert('Backup failed — try again or check your connection.');
+    console.error(e);
   }
 }
 
