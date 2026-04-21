@@ -344,6 +344,23 @@ html, body {
   caret-color: var(--accent);
   word-wrap: break-word;
 }
+
+/* ── DESKTOP: A4-style page ── */
+@media (min-width: 769px) {
+  #editor-wrap {
+    padding: 40px 40px 80px;
+    background: #0e0c12;
+  }
+  #editor {
+    max-width: 750px;
+    margin: 0 auto;
+    min-height: calc(100vh - 200px);
+    background: var(--surface);
+    border-radius: 3px;
+    padding: 48px 56px;
+    box-shadow: 0 4px 32px rgba(0,0,0,0.5), 0 0 0 1px var(--border);
+  }
+}
 #editor:empty::before {
   content: attr(data-placeholder);
   color: var(--faint);
