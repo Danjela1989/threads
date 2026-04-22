@@ -1533,28 +1533,18 @@ function openThread(charName, partnerName, threadName, key, el) {
   function scrollCursorIntoView() {
     const sel = window.getSelection();
     if (!sel || !sel.rangeCount) return;
-    // Insert a temporary span at cursor position, scroll it into view, remove it
-    const range = sel.getRangeAt(0).cloneRange();
-    range.collapse(false);
-    const marker = document.createElement('span');
-    marker.style.display = 'inline-block';
-    range.insertNode(marker);
+    const range = sel.getRangeAt(0);
+    const rect = range.getBoundingClientRect();
+    if (!rect || rect.height === 0) return;
     const wrap = document.getElementById('editor-wrap');
-    const markerRect = marker.getBoundingClientRect();
     const wrapRect = wrap.getBoundingClientRect();
     const clearance = window.innerWidth <= 768 ? 90 : 40;
     const bottomLimit = wrapRect.bottom - clearance;
-    if (markerRect.bottom > bottomLimit) {
-      wrap.scrollTop += markerRect.bottom - bottomLimit + 10;
+    if (rect.bottom > bottomLimit) {
+      wrap.scrollTop += rect.bottom - bottomLimit + 10;
     }
-    marker.parentNode.removeChild(marker);
-    // Restore selection
-    const restored = window.getSelection();
-    restored.removeAllRanges();
-    restored.addRange(sel.getRangeAt(0));
   }
   editor.addEventListener('keyup', scrollCursorIntoView);
-  editor.addEventListener('input', scrollCursorIntoView);
 }
 
 // ── NOTES ──
