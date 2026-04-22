@@ -1530,23 +1530,23 @@ function openThread(charName, partnerName, threadName, key, el) {
   editor.focus();
 
   // Keep cursor visible above the sidebar toggle button on mobile
-  editor.addEventListener('keydown', function(e) {
-    if (e.key === 'Enter') {
-      requestAnimationFrame(() => {
-        const sel = window.getSelection();
-        if (!sel || !sel.rangeCount) return;
-        const range = sel.getRangeAt(0);
-        const rect = range.getBoundingClientRect();
-        const wrap = document.getElementById('editor-wrap');
-        const wrapRect = wrap.getBoundingClientRect();
-        const clearance = window.innerWidth <= 768 ? 90 : 40;
-        const bottomLimit = wrapRect.bottom - clearance;
-        if (rect.bottom > bottomLimit) {
-          wrap.scrollTop += rect.bottom - bottomLimit + 10;
-        }
-      });
+  function scrollCursorIntoView() {
+    const sel = window.getSelection();
+    if (!sel || !sel.rangeCount) return;
+    const range = sel.getRangeAt(0);
+    const rect = range.getBoundingClientRect();
+    const wrap = document.getElementById('editor-wrap');
+    const wrapRect = wrap.getBoundingClientRect();
+    const clearance = window.innerWidth <= 768 ? 90 : 40;
+    const bottomLimit = wrapRect.bottom - clearance;
+    if (rect.bottom > bottomLimit) {
+      wrap.scrollTop += rect.bottom - bottomLimit + 10;
     }
+  }
+  editor.addEventListener('keyup', function(e) {
+    if (e.key === 'Enter') scrollCursorIntoView();
   });
+  editor.addEventListener('input', scrollCursorIntoView);
 }
 
 // ── NOTES ──
