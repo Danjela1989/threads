@@ -875,8 +875,8 @@ window.addEventListener('DOMContentLoaded', () => {
             const expiry = Date.now() + (resp.expires_in * 1000);
             localStorage.setItem('sfx_token', accessToken);
             localStorage.setItem('sfx_expiry', expiry);
-            // Only load and show app if we're not already in the app
-            if (document.getElementById('app').style.display === 'none') {
+            // Only load and show app if we're not already showing it
+            if (document.getElementById('auth-screen').style.display !== 'none') {
               await loadFromDrive();
               showApp();
             }
