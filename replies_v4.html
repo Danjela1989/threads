@@ -1529,23 +1529,31 @@ function openThread(charName, partnerName, threadName, key, el) {
 
   editor.focus();
 
-  // Keep cursor visible above the sidebar toggle button on mobile
+  // Keep cursor scrolled into view at all times
   function scrollCursorIntoView() {
     const sel = window.getSelection();
     if (!sel || !sel.rangeCount) return;
-    const range = sel.getRangeAt(0);
-    const rect = range.getBoundingClientRect();
+    // Insert a temporary span at cursor position, scroll it into view, remove it
+    const range = sel.getRangeAt(0).cloneRange();
+    range.collapse(false);
+    const marker = document.createElement('span');
+    marker.style.display = 'inline-block';
+    range.insertNode(marker);
     const wrap = document.getElementById('editor-wrap');
+    const markerRect = marker.getBoundingClientRect();
     const wrapRect = wrap.getBoundingClientRect();
     const clearance = window.innerWidth <= 768 ? 90 : 40;
     const bottomLimit = wrapRect.bottom - clearance;
-    if (rect.bottom > bottomLimit) {
-      wrap.scrollTop += rect.bottom - bottomLimit + 10;
+    if (markerRect.bottom > bottomLimit) {
+      wrap.scrollTop += markerRect.bottom - bottomLimit + 10;
     }
+    marker.parentNode.removeChild(marker);
+    // Restore selection
+    const restored = window.getSelection();
+    restored.removeAllRanges();
+    restored.addRange(sel.getRangeAt(0));
   }
-  editor.addEventListener('keyup', function(e) {
-    if (e.key === 'Enter') scrollCursorIntoView();
-  });
+  editor.addEventListener('keyup', scrollCursorIntoView);
   editor.addEventListener('input', scrollCursorIntoView);
 }
 
